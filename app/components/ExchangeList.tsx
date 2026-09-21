@@ -17,7 +17,7 @@ type Accent = {
   button: string;
 };
 
-const STORAGE_KEY = "cosas-favoritas-v3";
+const STORAGE_KEY = "cosas-favoritas-v4";
 
 const seeds: Record<Side, Item[]> = {
   hers: [
@@ -36,7 +36,7 @@ const seeds: Record<Side, Item[]> = {
     { id: "n3", label: "mouse inalámbrico", image: "/fotos/mouse-inalambrico.jpg" },
     { id: "n4", label: "medias Nike 3/4", image: "/fotos/medias-nike-tres-cuartos.webp" },
     { id: "n5", label: "botines", image: "/fotos/botines.jpg" },
-    { id: "n6", label: "barra de sonido", image: "/fotos/barra-de-sonido-de-pc.webp" },
+    { id: "n6", label: "barra de sonido", image: "/fotos/barra-de-sonido-pc.png" },
   ],
 };
 
