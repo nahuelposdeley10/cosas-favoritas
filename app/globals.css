@@ -18,12 +18,106 @@
 }
 
 body {
-  background-color: #efecdd;
+  background-color: #f7efe6;
   color: #332a25;
   font-family: var(--font-sans);
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(194, 89, 127, 0.16), transparent 46%),
+    radial-gradient(circle at 86% 28%, rgba(44, 110, 99, 0.1), transparent 42%),
+    radial-gradient(circle at 72% 86%, rgba(217, 154, 91, 0.16), transparent 42%),
+    radial-gradient(circle at 24% 82%, rgba(194, 89, 127, 0.12), transparent 44%);
+  background-attachment: fixed;
+}
+
+@keyframes fall-down {
+  0% {
+    transform: translate3d(0, -8vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--fl-opacity, 0.6);
+  }
+  50% {
+    transform: translate3d(var(--sway, 40px), 48vh, 0) rotate(170deg);
+  }
+  92% {
+    opacity: var(--fl-opacity, 0.6);
+  }
+  100% {
+    transform: translate3d(0, 108vh, 0) rotate(340deg);
+    opacity: 0;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-6deg);
+    opacity: var(--fl-opacity, 0.6);
+  }
+  50% {
+    transform: translate3d(var(--sway, 26px), -16px, 0) rotate(8deg);
+    opacity: calc(var(--fl-opacity, 0.6) * 0.72);
+  }
+}
+
+@keyframes screen-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(var(--rot, 0deg));
+  }
+  10% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px)))
+      scale(1) rotate(var(--rot, 0deg));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px)))
+      scale(var(--end-scale, 1.2)) rotate(var(--rot, 0deg));
+  }
+}
+
+@keyframes screen-flash {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .floating-layer {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, FormEvent } from "react";
 
 type Side = "hers" | "his";
 type Item = { id: string; label: string; note?: string; image?: string };
@@ -164,11 +164,31 @@ export default function ExchangeList() {
     }));
   }
 
+  const [lightbox, setLightbox] = useState<{
+    item: Item;
+    side: Side;
+  } | null>(null);
+  const [burst, setBurst] = useState<{
+    id: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  function openLightbox(item: Item, side: Side, x?: number, y?: number) {
+    setLightbox({ item, side });
+    setBurst({
+      id: Date.now() + Math.random(),
+      x: x ?? window.innerWidth / 2,
+      y: y ?? window.innerHeight / 2,
+    });
+    window.setTimeout(() => setBurst(null), 1300);
+  }
+
   const hersDone = lists.hers.done.length;
   const hisDone = lists.his.done.length;
 
   return (
-    <div className="relative overflow-hidden rounded-[1.75rem] border border-seam/70 bg-card shadow-[0_40px_90px_-45px_rgba(51,42,37,0.55)]">
+    <div className="relative overflow-hidden rounded-[1.75rem] border border-rose/20 bg-card shadow-[0_45px_100px_-40px_rgba(146,64,94,0.5)]">
       <header className="grid grid-cols-1 items-center gap-5 px-6 py-7 sm:px-10 md:grid-cols-[1fr_auto_1fr] md:gap-6">
         <div className="flex flex-col items-start gap-2">
           <p className="font-hand text-4xl leading-none text-rose">para Oriana</p>
@@ -217,6 +237,7 @@ export default function ExchangeList() {
           onAdd={(label, image) => addItem("hers", label, image)}
           onUpdate={(id, patch) => updateItem("hers", id, patch)}
           onRemove={(id) => removeItem("hers", id)}
+          onOpen={(item, x, y) => openLightbox(item, "hers", x, y)}
         />
         <Column
           data={lists.his}
@@ -225,8 +246,22 @@ export default function ExchangeList() {
           onAdd={(label, image) => addItem("his", label, image)}
           onUpdate={(id, patch) => updateItem("his", id, patch)}
           onRemove={(id) => removeItem("his", id)}
+          onOpen={(item, x, y) => openLightbox(item, "his", x, y)}
         />
       </main>
+
+      {lightbox ? (
+        <Lightbox
+          item={lightbox.item}
+          accent={accents[lightbox.side]}
+          sideLabel={
+            lightbox.side === "hers" ? "para Oriana" : "para Nahuel"
+          }
+          onClose={() => setLightbox(null)}
+        />
+      ) : null}
+
+      {burst ? <HeartBurst key={burst.id} x={burst.x} y={burst.y} /> : null}
 
       <footer className="border-t border-seam/60 px-6 py-4">
         <p className="text-center font-hand text-xl text-muted">
@@ -244,6 +279,7 @@ function Column({
   onAdd,
   onUpdate,
   onRemove,
+  onOpen,
 }: {
   data: SideData;
   accent: Accent;
@@ -251,6 +287,7 @@ function Column({
   onAdd: (label: string, image?: string) => void;
   onUpdate: (id: string, patch: Partial<Item>) => void;
   onRemove: (id: string) => void;
+  onOpen: (item: Item, x?: number, y?: number) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
@@ -304,17 +341,18 @@ function Column({
 
           return (
             <li key={item.id}>
-              <div className="flex items-start gap-1 rounded-2xl px-1 py-1 transition-colors hover:bg-white/70">
+              <div className="flex items-start gap-0.5 rounded-2xl px-0.5 py-1 transition-colors hover:bg-white/70">
                 <button
                   type="button"
                   role="checkbox"
                   aria-checked={done}
+                  aria-label={done ? "Desmarcar" : "Marcar"}
                   onClick={() => onToggle(item.id)}
-                  className={`group flex flex-1 items-start gap-3 rounded-xl px-2.5 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 ${accent.focus}`}
+                  className={`group mt-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 ${accent.focus}`}
                 >
                   <span
                     aria-hidden="true"
-                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[6px] border-2 transition-colors ${
+                    className={`grid h-5 w-5 place-items-center rounded-[6px] border-2 transition-colors ${
                       done
                         ? accent.check
                         : `border-seam bg-card ${accent.hover}`
@@ -336,12 +374,32 @@ function Column({
                       />
                     </svg>
                   </span>
+                </button>
 
+                <button
+                  type="button"
+                  onClick={(e) =>
+                    onOpen(
+                      item,
+                      e.clientX || window.innerWidth / 2,
+                      e.clientY || window.innerHeight / 2
+                    )
+                  }
+                  disabled={!item.image}
+                  aria-label={
+                    item.image
+                      ? `Ver en grande: ${item.label || "foto"}`
+                      : undefined
+                  }
+                  className={`group flex flex-1 items-start gap-3 rounded-xl px-2.5 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 ${accent.focus} ${
+                    item.image ? "cursor-pointer" : "cursor-default"
+                  }`}
+                >
                   {item.image ? (
                     <img
                       src={item.image}
                       alt={item.label || "foto"}
-                      className={`h-12 w-12 shrink-0 rounded-xl border border-seam/70 object-cover transition-opacity ${
+                      className={`h-12 w-12 shrink-0 rounded-xl border border-seam/70 object-cover transition-all duration-200 group-hover:scale-[1.03] group-hover:border-seam ${
                         done ? "opacity-50" : ""
                       }`}
                     />
@@ -369,6 +427,25 @@ function Column({
                       </span>
                     ) : null}
                   </span>
+
+                  {item.image ? (
+                    <span
+                      aria-hidden="true"
+                      className="mt-1.5 ml-auto h-4 w-4 shrink-0 self-center text-muted opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    >
+                      <svg
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                      >
+                        <path d="M8 3H3v5M12 3h5v5M8 17H3v-5M12 17h5v-5" />
+                      </svg>
+                    </span>
+                  ) : null}
                 </button>
 
                 <div className="flex items-center gap-0.5 self-start pt-2.5 pr-1.5">
@@ -516,6 +593,162 @@ function Column({
         </form>
       </div>
     </section>
+  );
+}
+
+const BURST_COLORS = [
+  "#C2597F",
+  "#E7A8BE",
+  "#D47A9E",
+  "#F2C9D7",
+  "#2C6E63",
+];
+
+function HeartBurst({ x, y }: { x: number; y: number }) {
+  const hearts = useMemo(() => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    return Array.from({ length: 60 }, (_, i) => {
+      const angle = Math.random() * Math.PI * 2;
+      const rad = Math.sqrt(Math.random()) * Math.max(w / 2, h / 2) * 1.15;
+      return {
+        id: i,
+        dx: Math.cos(angle) * rad,
+        dy: Math.sin(angle) * rad,
+        rot: (Math.random() * 120 - 60).toFixed(1),
+        size: 16 + Math.random() * 30,
+        delay: Math.random() * 260,
+        duration: 850 + Math.random() * 400,
+        endScale: (1 + Math.random() * 0.5).toFixed(2),
+        color: BURST_COLORS[i % BURST_COLORS.length],
+      };
+    });
+  }, []);
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-[70] overflow-hidden"
+    >
+      <span
+        className="absolute inset-0"
+        style={{
+          animation: "screen-flash 550ms ease-out both",
+          background: "#FBE3E9",
+        }}
+      />
+      {hearts.map((h) => (
+        <span
+          key={h.id}
+          className="absolute block"
+          style={
+            {
+              left: x,
+              top: y,
+              width: h.size,
+              height: h.size,
+              color: h.color,
+              animation: `screen-burst ${h.duration}ms cubic-bezier(0.22, 0.61, 0.36, 1) ${h.delay}ms both`,
+              "--dx": `${h.dx}px`,
+              "--dy": `${h.dy}px`,
+              "--rot": `${h.rot}deg`,
+              "--end-scale": h.endScale,
+            } as CSSProperties
+          }
+        >
+          <svg viewBox="0 0 48 48" className="h-full w-full">
+            <path
+              d="M24 42 C12 34 5 22 9 14 C13 7 19 8 24 15 C29 8 35 7 39 14 C43 22 36 34 24 42 Z"
+              fill="currentColor"
+            />
+          </svg>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function Lightbox({
+  item,
+  accent,
+  sideLabel,
+  onClose,
+}: {
+  item: Item;
+  accent: Accent;
+  sideLabel: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.label || "foto"}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-10"
+    >
+      <div
+        className="absolute inset-0 animate-[fade-in_200ms_ease-out] bg-ink/70 backdrop-blur-md"
+        onClick={onClose}
+      />
+
+      <div className="animate-[pop-in_240ms_ease-out] relative flex w-full max-w-2xl flex-col items-center">
+        <div className="relative w-full">
+          <div className="overflow-hidden rounded-3xl border border-seam bg-paper shadow-[0_40px_90px_-30px_rgba(0,0,0,0.7)]">
+            {item.image ? (
+              <img
+                src={item.image}
+                alt={item.label || "foto"}
+                className="max-h-[70vh] w-full object-contain"
+              />
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            autoFocus
+            aria-label="Cerrar"
+            className="absolute -top-3 -right-3 grid h-11 w-11 place-items-center rounded-full bg-ink text-paper shadow-lg ring-2 ring-card transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink/60"
+          >
+            <svg
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className="h-4 w-4"
+            >
+              <path d="M3 3l6 6M9 3l-6 6" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="mt-6 flex flex-col items-center gap-2 text-center">
+          <p className={`font-hand text-3xl leading-tight ${accent.title}`}>
+            {item.label}
+          </p>
+          {item.note ? (
+            <p className="text-sm text-muted">{item.note}</p>
+          ) : null}
+          <span
+            className={`mt-1 rounded-full px-3 py-1 text-xs font-semibold ${accent.chip}`}
+          >
+            {sideLabel}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
